@@ -52,6 +52,11 @@ int WINAPI WinMain(HINSTANCE,HINSTANCE,LPSTR,int)
 		gameScene->Draw();
 		// 描画終了
 		dxCommon->PostDraw();
+
+		if (input->PushKey(DIK_ESCAPE))
+		{
+			break;
+		}
 	}
 	// 各種解放
 	delete gameScene;
