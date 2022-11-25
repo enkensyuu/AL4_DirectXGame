@@ -416,8 +416,8 @@ void Object3d::CreateModel()
 	// objファイルを開く
 	//file.open("Resources/triangle_tex/triangle_tex.obj");
 	const string modelname = "triangle_mat";
-	const string filename = modelname + "obj";					//	"triangle_mat.obj"
-	const string directoryPath = "Resource/" + modelname + "/";	//	"Resource/triangle_mat/"
+	const string filename = modelname + ".obj";					//	"triangle_mat.obj"
+	const string directoryPath = "Resources/" + modelname + "/";	//	"Resource/triangle_mat/"
 	file.open(directoryPath + filename);						//	"Resource/triangle_mat/triangle_mat.obj"
 	// ファイルオープン失敗をチェック
 	if (file.fail())
@@ -442,10 +442,20 @@ void Object3d::CreateModel()
 		if (key == "mtllib")
 		{
 			// マテリアルのファイル名読み込み
-			string failname;
-			line_stream >> failname;
+			string filename;
+			line_stream >> filename;
 			// マテリアル読み込み
 			LoadMaterial(directoryPath, filename);
+		}
+
+		if (key == "v")
+		{
+			XMFLOAT3 position{};
+			line_stream >> position.x;
+			line_stream >> position.y;
+			line_stream >> position.z;
+
+			positions.emplace_back(position);
 		}
 
 		// 先頭文字列がvtなら頂点座標
@@ -590,16 +600,27 @@ bool Object3d::Initialize()
 
 	// 定数バッファの生成
 	result = device->CreateCommittedResource(
-		//	&heapProps, // アップロード可能
-		//	D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		//	IID_PPV_ARGS(&constBuff));
-		//assert(SUCCEEDED(result));
 		&heapProps, // アップロード可能
 		D3D12_HEAP_FLAG_NONE,
 		&resourceDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&constBuffB1));
+	assert(SUCCEEDED(result));
+
+	// リソース設定
+	resourceDesc =
+		CD3DX12_RESOURCE_DESC::Buffer((sizeof(ConstBufferDataB0) + 0xff) & ~0xff);
+
+	// 定数バッファの生成
+	result = device->CreateCommittedResource(
+		&heapProps, // アップロード可能
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&constBuffB0));
+	assert(SUCCEEDED(result));
 
 	return true;
 }
@@ -630,6 +651,11 @@ void Object3d::Update()
 	}
 
 	// 定数バッファへデータ転送
+	ConstBufferDataB0* constMap = nullptr;
+	result = constBuffB0->Map(0, nullptr, (void**)&constMap);
+	constMap->mat = matWorld * matView * matProjection;	// 行列の合成
+	constBuffB0->Unmap(0, nullptr);
+
 	ConstBufferDataB1* constMap1 = nullptr;
 	result = constBuffB1->Map(0, nullptr, (void**)&constMap1);
 	constMap1->ambient = material.ambient;
@@ -637,10 +663,6 @@ void Object3d::Update()
 	constMap1->specular = material.specular;
 	constMap1->alpha = material.alpha;
 	constBuffB1->Unmap(0, nullptr);
-	ConstBufferDataB0* constMap = nullptr;
-	result = constBuffB0->Map(0, nullptr, (void**)&constMap);
-	constMap->mat = matWorld * matView * matProjection;	// 行列の合成
-	constBuffB0->Unmap(0, nullptr);
 }
 
 void Object3d::Draw()
@@ -725,7 +747,7 @@ void Object3d::LoadMaterial(const std::string& directoryPath, const std::string&
 		}
 
 		// 先頭文字列がKsならスペキュラー色
-		if (key == "map_Kd")
+		if (key == "Ks")
 		{
 			// テクスチャのファイル名読み込み
 			line_stream >> material.specular.x;
