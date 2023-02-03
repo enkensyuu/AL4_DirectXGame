@@ -52,6 +52,7 @@ public: // メンバ関数
 	/// </summary>
 	void Draw();
 
+
 private: // メンバ変数
 	DirectXCommon* dxCommon = nullptr;
 	Input* input = nullptr;
@@ -63,8 +64,14 @@ private: // メンバ変数
 	Sprite* spriteBG = nullptr;
 	Model* model_ = nullptr;
 	Model* model2_ = nullptr;
+	Model* model3_ = nullptr;
 	Object3d* object3d_ = nullptr;
 	Object3d* object3d2_ = nullptr;
+
+	bool IsUpchange_ = false;
+	bool IsDownchange_ = true;
+
+	int changeTimer = 300;
 
 	// 当たり判定 球
 	Sphere sphere;

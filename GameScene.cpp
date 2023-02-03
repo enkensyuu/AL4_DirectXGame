@@ -15,6 +15,7 @@ GameScene::~GameScene()
 	delete spriteBG;
 	delete model_;
 	delete model2_;
+	delete model3_;
 	delete object3d_;
 	delete object3d2_;
 }
@@ -42,6 +43,7 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input)
 
 	model_ = Model::LoadFromOBJ("green");
 	model2_ = Model::LoadFromOBJ("Plane");
+	model3_ = Model::LoadFromOBJ("red");
 
 	// 3Dオブジェクト生成
 	object3d_ = Object3d::Create();
@@ -63,37 +65,43 @@ void GameScene::Initialize(DirectXCommon* dxCommon, Input* input)
 
 void GameScene::Update()
 {
-	// オブジェクト移動
-	if (input->PushKey(DIK_W) || input->PushKey(DIK_S) || input->PushKey(DIK_A) || input->PushKey(DIK_D))
+	changeTimer--;
+	if (changeTimer < 0 && IsUpchange_)
 	{
-		// 現在の座標を取得
-		XMFLOAT3 position = object3d_->GetPosition();
+		IsUpchange_ = false;
+		IsDownchange_ = true;
+		changeTimer = 300;
+	}
+	else if (changeTimer < 0 && IsDownchange_)
+	{
+		IsDownchange_ = false;
+		IsUpchange_ = true;
+		changeTimer = 300;
+	}
+	// 現在の座標を取得
+	XMFLOAT3 position = object3d_->GetPosition();
 
-		// 移動後の座標を計算
-		if (input->PushKey(DIK_W)) { position.y += 0.1f; }
-		else if (input->PushKey(DIK_S)) { position.y -= 0.1f; }
-		if (input->PushKey(DIK_D)) { position.x += 0.1f; }
-		else if (input->PushKey(DIK_A)) { position.x -= 0.1f; }
+	XMVECTOR moveY = XMVectorSet(0, 0.1f, 0, 0);
 
-		// 座標の変更を反映
-		object3d_->SetPosition(position);
+	if (IsUpchange_)
+	{
+		position.y += 0.1f;
+		sphere.center += moveY;
 	}
 
-	// 球移動
+	if (IsDownchange_)
 	{
-		XMVECTOR moveY = XMVectorSet(0, 0.1f, 0, 0);
-		if (input->PushKey(DIK_W)) { sphere.center += moveY; }
-		else if (input->PushKey(DIK_S)) { sphere.center -= moveY; }
-
-		XMVECTOR moveX = XMVectorSet(0.1f, 0, 0,0);
-		if (input->PushKey(DIK_A)) { sphere.center += moveX; }
-		else if (input->PushKey(DIK_D)) { sphere.center -= moveX; }
-
-		// 現在の座標を取得
-		XMFLOAT3 position = object3d_->GetPosition();
-
+		position.y -= 0.1f;
+		sphere.center -= moveY;
 	}
 
+	// 座標の変更を反映
+	object3d_->SetPosition(position);
+	
+	
+	
+
+	// 現在の座標を取得
 	object3d_->Update();
 
 
@@ -112,6 +120,11 @@ void GameScene::Update()
 	if (hit)
 	{
 		debugText.Print("HIT", 50, 200, 1.0f);
+		object3d_->SetModel(model3_);
+	}
+	else
+	{
+		object3d_->SetModel(model_);
 	}
 
 }
